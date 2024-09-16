@@ -14,9 +14,9 @@ const handleApiCall = (req, res) => {
     .catch(err => res.status(400).json('unable to work with API'))
 }
 
-const handleImage = (req, res, db) => {
+const handleImage = (req, res, knex) => {
   const { id } = req.body;
-  db('users').where('id', '=', id)
+  knex('users').where('id', '=', id)
   .increment('entries', 1)
   .returning('entries')
   .then(entries => {
