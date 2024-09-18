@@ -1,22 +1,53 @@
-const Clarifai = require('clarifai');
+const getRequestOptionsJSON = (imgUrl) => {
+  const PAT = '46bf2c0a326e458baff008dd2231a166';
+  const USER_ID = 'clarifai';
+  const APP_ID = 'main';
+  const MODEL_ID = 'face-detection';
+  const IMAGE_URL = imgUrl;
 
-//You must add your own API key here from Clarifai. 
-const app = new Clarifai.App({
- apiKey: '6bc0ea2ec1464a5f85fd4e4dfa68b2a3' 
-});
+  const raw = JSON.stringify({
+      "user_app_id": {
+          "user_id": USER_ID,
+          "app_id": APP_ID
+      },
+      "inputs": [
+          {
+              "data": {
+                  "image": {
+                      "url": IMAGE_URL
+                      // "base64": IMAGE_BYTES_STRING
+                  }
+              }
+          }
+      ]
+  });
 
-const handleApiCall = (req, res) => {
+  const requestOptions = {
+      method: 'POST',
+      headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Key ' + PAT
+      },
+      body: raw
+  };
 
-  app.models.predict('face-detection', req.body.input)
-    .then(data => {
-      res.json(data);
-    })
-    .catch(err => res.status(400).json('unable to work with API'))
+  return requestOptions;
 }
 
-const handleImage = (req, res, knex) => {
+const handleApiCall = (req, res) => {
+  fetch("https://api.clarifai.com/v2/models/" + 'face-detection' + "/outputs", getRequestOptionsJSON(req.body.input))
+  .then(response => response.json())
+  .then(data => {
+    res.json(data);
+  })
+  .catch(err => res.status(400).json('unable to work with API'));
+}
+
+
+const handleImage = (req, res, db) => {
   const { id } = req.body;
-  knex('users').where('id', '=', id)
+  db('users')
+  .where('id', '=', id)
   .increment('entries', 1)
   .returning('entries')
   .then(entries => {
@@ -28,4 +59,4 @@ const handleImage = (req, res, knex) => {
 module.exports = {
   handleImage,
   handleApiCall
-}
+};
